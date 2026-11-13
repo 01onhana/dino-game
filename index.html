@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공룡 달리기 게임</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#f4f8fb;color:#203040;text-align:center;margin:0;padding:24px}
+  main{max-width:720px;margin:auto}
+  canvas{display:block;width:100%;height:auto;background:#eaf5ff;border:2px solid #91b9d2;border-radius:14px;touch-action:manipulation}
+  button{border:0;border-radius:10px;padding:12px 20px;margin:6px;background:#2879b9;color:white;font-size:16px;font-weight:700;cursor:pointer}
+  button.secondary{background:#e1ebf2;color:#23445c}
+  .score{display:flex;justify-content:space-between;font-weight:700;margin:14px 4px}
+  p{line-height:1.6}
+</style>
+</head>
+<body>
+<main>
+  <h1>🦖 공룡 달리기 게임</h1>
+  <div class="score"><span>🏆 점수: <span id="score">0</span></span><span id="status">준비 완료!</span></div>
+  <canvas id="game" width="640" height="220" aria-label="장애물을 점프로 피하는 공룡 게임"></canvas>
+  <div>
+    <button id="start">게임 시작</button>
+    <button id="jump" class="secondary">⬆ 점프!</button>
+    <button id="reset" class="secondary">다시 하기</button>
+  </div>
+  <p>스페이스바 또는 ↑ 키로 점프하세요. 휴대전화에서는 화면이나 점프 버튼을 눌러도 돼요.</p>
+  <p id="result">장애물을 피해 최고 점수에 도전하세요!</p>
+</main>
+<script>
+(() => {
+ const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+ const scoreEl=document.getElementById('score'),status=document.getElementById('status'),result=document.getElementById('result');
+ let running=false,over=false,score=0,best=0,frame=0,speed=5,obstacles=[],y=0,vy=0;
+ const ground=180,clouds=[{x:120,y:40},{x:410,y:68}];
+ function draw(){
+  ctx.clearRect(0,0,640,220);
+  ctx.fillStyle='#eaf5ff';ctx.fillRect(0,0,640,220);
+  ctx.fillStyle='#fff';
+  clouds.forEach(a=>{ctx.beginPath();ctx.arc(a.x,a.y,13,0,Math.PI*2);ctx.arc(a.x+15,a.y-5,16,0,Math.PI*2);ctx.arc(a.x+30,a.y,12,0,Math.PI*2);ctx.fill()});
+  ctx.strokeStyle='#657b83';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,ground);ctx.lineTo(640,ground);ctx.stroke();
+  ctx.fillStyle='#9bb6a0';for(let i=0;i<640;i+=35)ctx.fillRect(i,ground+8,12,2);
+  ctx.fillStyle='#32875c';ctx.fillRect(65,ground-34-y,30,27);ctx.fillRect(84,ground-52-y,24,22);ctx.fillRect(99,ground-44-y,7,5);
+  ctx.fillStyle='#fff';ctx.fillRect(99,ground-48-y,4,4);
+  ctx.fillStyle='#245d43';ctx.fillRect(68,ground-7-y,8,7);ctx.fillRect(87,ground-7-y,8,7);ctx.fillRect(57,ground-30-y,10,6);
+  obstacles.forEach(o=>{ctx.fillStyle='#d27b37';ctx.fillRect(o.x,ground-o.h,o.w,o.h);ctx.fillRect(o.x-5,ground-o.h+10,7,9);ctx.fillRect(o.x+o.w-2,ground-o.h+19,7,8)});
+ }
+ function reset(){running=false;over=false;score=0;frame=0;speed=5;obstacles=[];y=0;vy=0;scoreEl.textContent='0';status.textContent='준비 완료!';result.textContent='장애물을 피해 최고 점수에 도전하세요!';draw()}
+ function jump(){if(!running){if(over)reset();running=true;status.textContent='달리는 중!'}if(y===0)vy=12}
+ function end(){running=false;over=true;best=Math.max(best,score);status.textContent='게임 종료!';result.textContent='점수 '+score+'점 · 최고 점수 '+best+'점'}
+ function tick(){
+  if(running){
+   frame++;score=Math.floor(frame/5);scoreEl.textContent=score;speed=Math.min(10,5+score/100);
+   vy-=.65;y=Math.max(0,y+vy);if(y===0)vy=0;
+   if(frame%75===0)obstacles.push({x:650,w:20+Math.random()*12,h:25+Math.random()*22});
+   obstacles.forEach(o=>o.x-=speed);obstacles=obstacles.filter(o=>o.x>-40);
+   clouds.forEach(a=>{a.x-=.5;if(a.x< -40)a.x=670});
+   if(obstacles.some(o=>o.x<95&&o.x+o.w>65&&ground-y>ground-o.h+5&&y<o.h-2))end();
+  }
+  draw();requestAnimationFrame(tick);
+ }
+ document.getElementById('start').onclick=()=>{if(over)reset();running=true;status.textContent='달리는 중!'};
+ document.getElementById('jump').onclick=jump;
+ document.getElementById('reset').onclick=reset;
+ canvas.addEventListener('pointerdown',jump);
+ document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}});
+ reset();tick();
+})();
+</script>
+</body>
+</html>
